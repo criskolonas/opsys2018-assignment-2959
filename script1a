@@ -1,0 +1,29 @@
+#!/bin/bash
+
+touch pagestatus.txt
+
+
+cat pages | while read -s line; do
+case $line in 
+http*)
+	wget -q -O url.html  $line || echo "$line FAILED" 
+	
+if ! grep -q "$line" pagestatus.txt  ; then
+       	echo "$line INIT" 
+	echo "$line $(md5sum  url.html |  awk '{print $1}')" >> pagestatus.txt	
+else
+	cat pagestatus.txt |  while read -s linee; do
+	url=$(echo "$linee" | awk '{print $1}')
+	oldmd5=$(echo "$linee" | awk '{print $2}')
+	newmd5=$(echo "$(md5sum url.html)" | awk '{print $1}' )
+       	
+	if [ "$url" == "$line" ] && [ "$oldmd5" != "$newmd5" ]; then
+		echo "$line"   
+	fi
+	done
+
+fi	
+
+esac
+
+done
